@@ -22,7 +22,7 @@ const suggestedQuestions = [
   "What tutoring services are available?",
   "Who can help me with Calculus?",
   "What events are coming up?",
-  "How do I use the 3D printing service?",
+  
 ]
 
 // Simple function to generate responses based on keywords
@@ -225,4 +225,4 @@ export default function ChatInterface() {
       </form>
     </Card>
   )
-}
+} 

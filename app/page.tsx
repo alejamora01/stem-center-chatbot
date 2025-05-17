@@ -41,9 +41,9 @@ export default function Home() {
       <footer className="border-t py-4 px-4 sm:px-6">
         <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-sm text-gray-500">
-            © {new Date().getFullYear()} STEM Center Assistant. Project in development.
+            © {new Date().getFullYear()} © 2025 Gannon University STEM Center. All rights reserved.
           </p>
-          <p className="text-sm text-gray-500">Developed with Next.js and AI SDK</p>
+          <p className="text-sm text-gray-500">For assistance, email: stemcenter@gannon.edu</p>
         </div>
       </footer>
     </div>
