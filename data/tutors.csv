@@ -1,0 +1,5 @@
+id,name,subjects,schedule,email
+john-smith,john smith,Calculus I;Calculus II;Differential Equations,Mon/Wed 10:10-11:45,john.smith@gannon.edu
+maria-garcia,maria garcia,Physics I;Physics II;Engineering Mechanics,Tue/Thu 13:00-15:00,maria.garcia@gannon.edu
+david-johnson,david johnson,Chemistry;Organic Chemistry,Mon/Fri 12:20-14:30,david.johnson@gannon.edu
+sarah-williams,sarah williams,Computer Science;Data Structures,Wed/Fri 15:00-17:00,sarah.williams@gannon.edu
