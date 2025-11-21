@@ -21,3 +21,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unable to create token" }, { status: 500 })
   }
 }
+
