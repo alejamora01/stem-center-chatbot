@@ -1,8 +1,8 @@
 // Chat API Route with streaming, tool calling, and rate limiting
-// Uses Vercel AI SDK v4 for multi-provider LLM support
-// Includes jailbreak-resistant system prompt and Upstash rate limiting
+// Supports both self-hosted Ollama backend and cloud providers (OpenAI/Anthropic)
 
 import { streamText, convertToCoreMessages, type Message } from "ai"
+import { SignJWT } from "jose"
 import { getLanguageModel, getModelInfo } from "@/lib/ai-provider"
 import { chatTools } from "@/lib/tools"
 import { SYSTEM_PROMPT, RATE_LIMIT_MESSAGE, ERROR_MESSAGE } from "@/lib/system-prompt"
@@ -11,6 +11,63 @@ import {
   getIdentifier,
   getRateLimitHeaders,
 } from "@/lib/rate-limit"
+
+// Configuration
+const BACKEND_URL = process.env.BACKEND_URL
+const BACKEND_JWT_SECRET = process.env.BACKEND_JWT_SECRET
+const USE_BACKEND = process.env.AI_PROVIDER === "backend"
+
+// Create JWT token for backend authentication
+async function createBackendToken(identifier: string): Promise<string> {
+  if (!BACKEND_JWT_SECRET) {
+    throw new Error("BACKEND_JWT_SECRET is not configured")
+  }
+
+  const secret = new TextEncoder().encode(BACKEND_JWT_SECRET)
+
+  return new SignJWT({ sub: identifier })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setIssuer("stem-center-vercel")
+    .setAudience("stem-center-backend")
+    .setExpirationTime("5m")
+    .setJti(crypto.randomUUID())
+    .sign(secret)
+}
+
+// Proxy request to self-hosted backend
+async function proxyToBackend(
+  messages: Message[],
+  identifier: string
+): Promise<Response> {
+  if (!BACKEND_URL) {
+    throw new Error("BACKEND_URL is not configured")
+  }
+
+  const token = await createBackendToken(identifier)
+
+  const response = await fetch(`${BACKEND_URL}/api/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      messages: messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
+      stream: true,
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Backend error: ${response.status} - ${error}`)
+  }
+
+  return response
+}
 
 export async function POST(req: Request) {
   try {
@@ -45,7 +102,59 @@ export async function POST(req: Request) {
 
     const { messages }: { messages: Message[] } = await req.json()
 
-    // Get the configured language model
+    // Use self-hosted backend if configured
+    if (USE_BACKEND && BACKEND_URL) {
+      console.log(`Chat request from ${identifier} using self-hosted backend`)
+
+      try {
+        const backendResponse = await proxyToBackend(messages, identifier)
+
+        // Transform backend SSE to Vercel AI SDK format
+        const transformedStream = new TransformStream({
+          transform(chunk, controller) {
+            const text = new TextDecoder().decode(chunk)
+            const lines = text.split("\n")
+
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const data = line.slice(6)
+                if (data === "[DONE]") {
+                  controller.enqueue(new TextEncoder().encode("0:\n"))
+                } else {
+                  try {
+                    const parsed = JSON.parse(data)
+                    if (parsed.content) {
+                      // Format as Vercel AI SDK text stream
+                      controller.enqueue(
+                        new TextEncoder().encode(`0:${JSON.stringify(parsed.content)}\n`)
+                      )
+                    }
+                  } catch {
+                    // Ignore parse errors
+                  }
+                }
+              }
+            }
+          },
+        })
+
+        const stream = backendResponse.body?.pipeThrough(transformedStream)
+
+        return new Response(stream, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            ...getRateLimitHeaders(rateLimitResult),
+          },
+        })
+      } catch (backendError) {
+        console.error("Backend proxy error:", backendError)
+        // Fall through to cloud provider if backend fails
+        console.log("Falling back to cloud provider...")
+      }
+    }
+
+    // Use cloud provider (OpenAI/Anthropic)
     const model = getLanguageModel()
     const modelInfo = getModelInfo()
 
@@ -102,19 +211,39 @@ export async function POST(req: Request) {
 // Health check endpoint
 export async function GET() {
   const modelInfo = getModelInfo()
+  const usingBackend = USE_BACKEND && BACKEND_URL
+
+  // Check backend health if configured
+  let backendStatus = null
+  if (usingBackend) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/health`, {
+        method: "GET",
+        signal: AbortSignal.timeout(5000),
+      })
+      backendStatus = response.ok ? "ok" : "error"
+    } catch {
+      backendStatus = "unreachable"
+    }
+  }
+
   return new Response(
     JSON.stringify({
       status: "ok",
       service: "STEM Center Chat API",
-      provider: modelInfo.provider,
-      model: modelInfo.model,
+      mode: usingBackend ? "self-hosted" : "cloud",
+      provider: usingBackend ? "ollama" : modelInfo.provider,
+      model: usingBackend ? process.env.OLLAMA_MODEL || "llama3.1:8b" : modelInfo.model,
+      backendUrl: usingBackend ? BACKEND_URL : null,
+      backendStatus,
       features: {
         streaming: true,
-        toolCalling: true,
+        toolCalling: !usingBackend, // Tools handled by backend when using self-hosted
         rateLimiting: !!(
           process.env.UPSTASH_REDIS_REST_URL &&
           process.env.UPSTASH_REDIS_REST_TOKEN
         ),
+        rag: usingBackend, // RAG only available with self-hosted backend
       },
     }),
     { headers: { "Content-Type": "application/json" } }

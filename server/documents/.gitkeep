@@ -1,0 +1,5 @@
+# Place your documents here for RAG ingestion
+# Supported formats: .pdf, .md, .markdown, .txt
+#
+# Run: npm run ingest
+# To ingest all documents in this folder

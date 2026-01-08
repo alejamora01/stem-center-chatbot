@@ -1,46 +1,191 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --card: #ffffff;
-  --card-foreground: #171717;
-  --primary: #990000;
-  --primary-foreground: #ffffff;
-  --secondary: #f5f5f5;
-  --secondary-foreground: #171717;
-  --muted: #f5f5f5;
-  --muted-foreground: #737373;
-  --accent: #fff8e8;
-  --accent-foreground: #990000;
-  --border: #e5e5e5;
-  --input: #e5e5e5;
-  --ring: #990000;
-  --radius: 0.5rem;
+  /* Light theme - warm, soft tones */
+  --background: #fafaf9;
+  --background-secondary: #ffffff;
+  --foreground: #1c1917;
+  --foreground-muted: #78716c;
+
+  --sidebar-bg: #ffffff;
+  --sidebar-hover: #f5f5f4;
+  --sidebar-active: #e7e5e4;
+  --sidebar-border: #e7e5e4;
+
+  --input-bg: #ffffff;
+  --input-border: #d6d3d1;
+  --input-focus: #a8a29e;
+
+  --primary: #8b5cf6;
+  --primary-hover: #7c3aed;
+  --accent: #ea580c;
+}
+
+.dark {
+  /* Dark theme - warm, Claude-inspired */
+  --background: #292524;
+  --background-secondary: #1c1917;
+  --foreground: #fafaf9;
+  --foreground-muted: #a8a29e;
+
+  --sidebar-bg: #1c1917;
+  --sidebar-hover: #292524;
+  --sidebar-active: #44403c;
+  --sidebar-border: #292524;
+
+  --input-bg: #44403c;
+  --input-border: #57534e;
+  --input-focus: #78716c;
+
+  --primary: #a78bfa;
+  --primary-hover: #8b5cf6;
+  --accent: #fb923c;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-input-bg: var(--input-bg);
+  --color-input-border: var(--input-border);
+  --color-input-focus: var(--input-focus);
   --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Clean scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--foreground-muted);
+  border-radius: 3px;
+  opacity: 0.3;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  opacity: 0.5;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInSoft {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-fadeInSoft {
+  animation: fadeInSoft 0.2s ease-out forwards;
+}
+
+/* Chat content styling */
+.chat-content {
+  line-height: 1.7;
+}
+
+.chat-content p {
+  margin-bottom: 0.875em;
+}
+
+.chat-content p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-content ul, .chat-content ol {
+  margin: 0.75em 0;
+  padding-left: 1.5em;
+}
+
+.chat-content li {
+  margin-bottom: 0.25em;
+}
+
+.chat-content code {
+  background: var(--sidebar-hover);
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.chat-content pre {
+  background: var(--background-secondary);
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.chat-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.chat-content a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.chat-content a:hover {
+  text-decoration: underline;
+}
+
+.chat-content strong {
+  font-weight: 600;
+}
+
+/* Focus visible for accessibility - subtle */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+textarea:focus-visible,
+input:focus-visible {
+  outline: none;
+}
+
+/* Selection color */
+::selection {
+  background: var(--primary);
+  color: white;
 }
