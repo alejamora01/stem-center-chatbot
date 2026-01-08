@@ -50,7 +50,7 @@ if (Test-Path $INSTALL_DIR) {
     git pull
 } else {
     Write-Host "  Cloning repository..."
-    git clone https://github.com/YOUR_USERNAME/stem-center-chatbot.git $INSTALL_DIR
+    git clone https://github.com/alejamora01/stem-center-chatbot.git $INSTALL_DIR
     Set-Location $INSTALL_DIR
 }
 
