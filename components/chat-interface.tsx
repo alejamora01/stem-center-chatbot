@@ -1,163 +1,80 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useRef, useEffect } from "react"
-import { Send, Bot, User, Loader2 } from "lucide-react"
+import { useChat } from "ai/react"
+import { useRef, useEffect } from "react"
+import { Send, Bot, User, Loader2, AlertCircle, RefreshCw, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
-import { stemCenterInfo } from "@/lib/stem-center-data"
-
-// Types for messages
-type Message = {
-  role: "user" | "assistant"
-  content: string
-}
 
 // Suggested questions for the user
 const suggestedQuestions = [
   "What are the STEM Center hours?",
   "Where is the STEM Center located?",
-  "What tutoring services are available?",
   "Who can help me with Calculus?",
-  "What events are coming up?",
-  
+  "What appointments are available this week?",
+  "How do I schedule an appointment?",
 ]
 
-// Simple function to generate responses based on keywords
-function generateResponse(message: string): string {
-  const lowerMessage = message.toLowerCase()
-
-  if (lowerMessage.includes("hello") || lowerMessage.includes("hi") || lowerMessage.includes("good morning")) {
-    return "Hello! I'm the virtual assistant for the STEM Center. How can I help you today?"
-  }
-
-  if (lowerMessage.includes("location") || lowerMessage.includes("where") || lowerMessage.includes("address")) {
-    return `The STEM Center is located at: ${stemCenterInfo.location}`
-  }
-
-  if (lowerMessage.includes("hours") || lowerMessage.includes("time") || lowerMessage.includes("open")) {
-    return `Our hours of operation are: ${stemCenterInfo.hours}`
-  }
-
-  if (lowerMessage.includes("service") || lowerMessage.includes("offer")) {
-    return `The STEM Center offers the following services:
-${stemCenterInfo.services.map((s) => `• ${s}`).join("\n")}`
-  }
-
-  if (lowerMessage.includes("tutor") || lowerMessage.includes("help") || lowerMessage.includes("assistance")) {
-    const tutorInfo = stemCenterInfo.tutors
-      .map((t) => `• ${t.name}: ${t.subjects.join(", ")} - ${t.schedule}`)
-      .join("\n")
-    return `We have the following tutors:
-${tutorInfo}`
-  }
-
-  if (lowerMessage.includes("event") || lowerMessage.includes("workshop") || lowerMessage.includes("activity")) {
-    const eventInfo = stemCenterInfo.events.map((e) => `• ${e.name}: ${e.date} at ${e.time}`).join("\n")
-    return `Upcoming events at the STEM Center:
-${eventInfo}`
-  }
-
-  if (lowerMessage.includes("3d printing") || lowerMessage.includes("print") || lowerMessage.includes("3d")) {
-    return "We offer 3D printing services for academic projects. To use this service, please send your model in STL format to stem.center@gannon.edu and you will receive a confirmation with the estimated time and cost of printing."
-  }
-
-  if (lowerMessage.includes("thank")) {
-    return "You're welcome! I'm here to help. If you have more questions, feel free to ask."
-  }
-
-  if (lowerMessage.includes("calculus")) {
-    const calculusTutors = stemCenterInfo.tutors
-      .filter((tutor) => tutor.subjects.some((subject) => subject.toLowerCase().includes("calculus")))
-      .map((tutor) => `• ${tutor.name}: ${tutor.schedule}`)
-      .join("\n")
-
-    if (calculusTutors) {
-      return `These tutors can help you with Calculus:
-${calculusTutors}
-
-To schedule an appointment, please visit our online scheduling system.`
-    }
-  }
-
-  return "I don't have specific information about that. Can you rephrase your question? I can help you with information about location, hours, services, tutoring, and events at the STEM Center."
-}
-
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "Hello! I'm the virtual assistant for the Gannon University STEM Center. How can I help you today?",
-    },
-  ])
-  const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    error,
+    reload,
+    stop,
+    setInput,
+  } = useChat({
+    api: "/api/chat",
+    initialMessages: [
+      {
+        id: "welcome",
+        role: "assistant",
+        content:
+          "Hello! I'm the virtual assistant for the Gannon University STEM Center. I can help you find tutors, check availability, and answer questions about our services. How can I help you today?",
+      },
+    ],
+    onError: (error) => {
+      console.error("Chat error:", error)
+    },
+  })
 
   // Auto-scroll to the latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!input.trim()) return
-
-    // Add user message
-    const userMessage: Message = { role: "user", content: input }
-    setMessages((prev) => [...prev, userMessage])
-    setInput("")
-    setIsLoading(true)
-
-    // Simulate response time
+  // Handle suggested question click
+  const handleSuggestedQuestion = (question: string) => {
+    setInput(question)
+    // Submit after a brief delay to allow state update
     setTimeout(() => {
-      // Generate simple response based on keywords
-      const responseContent = generateResponse(input)
-      const assistantMessage: Message = { role: "assistant", content: responseContent }
-
-      setMessages((prev) => [...prev, assistantMessage])
-      setIsLoading(false)
-    }, 1000)
-
-    // AI Integration (commented out for future implementation)
-    /*
-    try {
-      // Call the API
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-      })
-
-      const data = await response.json()
-      
-      if (response.ok) {
-        const assistantMessage: Message = { role: "assistant", content: data.response }
-        setMessages((prev) => [...prev, assistantMessage])
-      } else {
-        throw new Error(data.error || "Error processing your request")
+      const form = document.getElementById("chat-form") as HTMLFormElement
+      if (form) {
+        form.requestSubmit()
       }
-    } catch (error) {
-      console.error("Error:", error)
-      const errorMessage: Message = { 
-        role: "assistant", 
-        content: "I'm sorry, there was an error processing your request. Please try again later." 
-      }
-      setMessages((prev) => [...prev, errorMessage])
-    } finally {
-      setIsLoading(false)
-    }
-    */
+    }, 50)
   }
+
+  // Filter out tool-related messages for cleaner display
+  const displayMessages = messages.filter(
+    (message) => message.role === "user" || (message.role === "assistant" && message.content)
+  )
 
   return (
     <Card className="flex flex-col h-[600px] w-full border rounded-lg overflow-hidden">
+      {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message, index) => (
-          <div key={index} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+        {displayMessages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+          >
             <div
               className={`flex items-start gap-2 max-w-[80%] ${
                 message.role === "user"
@@ -165,53 +82,95 @@ export default function ChatInterface() {
                   : "bg-gray-100 text-gray-800 rounded-r-lg rounded-tl-lg"
               } p-3`}
             >
-              <div className="mt-1">
-                {message.role === "user" ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
+              <div className="mt-1 flex-shrink-0">
+                {message.role === "user" ? (
+                  <User className="h-5 w-5" />
+                ) : (
+                  <Bot className="h-5 w-5" />
+                )}
               </div>
-              <div className="whitespace-pre-line">{message.content}</div>
+              <div className="whitespace-pre-line prose prose-sm max-w-none [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4">
+                {message.content}
+              </div>
             </div>
           </div>
         ))}
+
+        {/* Loading indicator */}
         {isLoading && (
           <div className="flex justify-start">
             <div className="bg-gray-100 text-gray-800 rounded-r-lg rounded-tl-lg p-3 flex items-center gap-2">
               <Bot className="h-5 w-5" />
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Typing...</span>
+              <span>Thinking...</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={stop}
+                className="ml-2 h-6 px-2 text-xs"
+              >
+                <Square className="h-3 w-3 mr-1" />
+                Stop
+              </Button>
             </div>
           </div>
         )}
+
+        {/* Error display */}
+        {error && (
+          <div className="flex justify-start">
+            <div className="bg-red-50 text-red-800 rounded-lg p-3 flex items-center gap-2 max-w-[80%]">
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm">
+                  Sorry, something went wrong. Please try again.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => reload()}
+                className="ml-2 h-6 px-2 text-xs"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Retry
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggested Questions */}
-      <div className="px-4 py-3 border-t bg-gray-50">
-        <p className="text-sm text-gray-500 mb-2">Suggested questions:</p>
-        <div className="flex flex-wrap gap-2">
-          {suggestedQuestions.map((question, index) => (
-            <button
-              key={index}
-              className="text-xs bg-white border border-[#990000] hover:bg-[#fff8e8] text-[#990000] px-3 py-1 rounded-full transition-colors"
-              onClick={() => {
-                setInput(question)
-                setTimeout(() => {
-                  handleSubmit({ preventDefault: () => {} } as React.FormEvent)
-                }, 100)
-              }}
-            >
-              {question}
-            </button>
-          ))}
+      {/* Suggested Questions - only show at start */}
+      {displayMessages.length <= 2 && (
+        <div className="px-4 py-3 border-t bg-gray-50">
+          <p className="text-sm text-gray-500 mb-2">Suggested questions:</p>
+          <div className="flex flex-wrap gap-2">
+            {suggestedQuestions.map((question, index) => (
+              <button
+                key={index}
+                type="button"
+                className="text-xs bg-white border border-[#990000] hover:bg-[#fff8e8] text-[#990000] px-3 py-1 rounded-full transition-colors disabled:opacity-50"
+                onClick={() => handleSuggestedQuestion(question)}
+                disabled={isLoading}
+              >
+                {question}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <form onSubmit={handleSubmit} className="border-t p-4 flex gap-2">
+      {/* Input form */}
+      <form id="chat-form" onSubmit={handleSubmit} className="border-t p-4 flex gap-2">
         <Textarea
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleInputChange}
           placeholder="Type your question here..."
           className="flex-1 resize-none"
           rows={1}
+          disabled={isLoading}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault()
@@ -219,10 +178,10 @@ export default function ChatInterface() {
             }
           }}
         />
-        <Button type="submit" disabled={isLoading || !input.trim()}>
-          <Send className="h-4 w-4" />
+        <Button type="submit" disabled={isLoading || !input.trim()} aria-label="Send message">
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </Button>
       </form>
     </Card>
   )
-} 
+}

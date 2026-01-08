@@ -194,7 +194,7 @@ export default function Roadmap() {
                   <li className="flex items-start gap-2">
                     <ArrowRight className="h-5 w-5 text-gray-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong>Continuous training</strong> - System to constantly improve the chatbot's responses
+                      <strong>Continuous training</strong> - System to constantly improve the chatbot&apos;s responses
                     </span>
                   </li>
                 </ul>

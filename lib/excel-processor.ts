@@ -10,7 +10,7 @@ export type TutorAvailability = {
 
 export type SheetData = {
   sheetName: string
-  data: any[]
+  data: unknown[][]
 }
 
 export function readExcelFile(filePath: string): SheetData[] {
@@ -28,7 +28,7 @@ export function readExcelFile(filePath: string): SheetData[] {
 
       // Filter out empty rows
       const filteredData = data.filter(
-        (row) => Array.isArray(row) && row.length > 0 && !row.every((cell) => cell === undefined || cell === ""),
+        (row): row is unknown[] => Array.isArray(row) && row.length > 0 && !row.every((cell) => cell === undefined || cell === ""),
       )
 
       result.push({
@@ -44,13 +44,13 @@ export function readExcelFile(filePath: string): SheetData[] {
   }
 }
 
-export function processTutorAvailability(data: any[]): TutorAvailability[] {
+export function processTutorAvailability(data: unknown[][]): TutorAvailability[] {
   // Skip header rows (assuming first 3 rows are headers)
   const dataWithoutHeaders = data.slice(3)
 
   // Extract column headers (tutor names) from the first row
-  const headers = data[2] as string[]
-  const tutorNames = headers.slice(1) // Skip the first column which is time slots
+  const headers = data[2] as unknown[]
+  const tutorNames = headers.slice(1).map(h => String(h || "")) // Skip the first column which is time slots
 
   const result: TutorAvailability[] = []
 
@@ -58,17 +58,17 @@ export function processTutorAvailability(data: any[]): TutorAvailability[] {
   dataWithoutHeaders.forEach((row) => {
     if (!row || row.length === 0) return
 
-    const timeSlot = row[0]
+    const timeSlot = String(row[0] || "")
     if (!timeSlot) return
 
-    const tutors = []
+    const tutors: { name: string; availability: number }[] = []
 
     // Process each tutor's availability for this time slot
     for (let i = 1; i < row.length && i <= tutorNames.length; i++) {
       if (tutorNames[i - 1]) {
         tutors.push({
           name: tutorNames[i - 1],
-          availability: row[i] !== undefined ? row[i] : 0,
+          availability: typeof row[i] === "number" ? (row[i] as number) : 0,
         })
       }
     }
