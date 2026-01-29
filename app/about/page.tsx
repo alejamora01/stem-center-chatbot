@@ -46,7 +46,7 @@ export default function About() {
                 <p className="text-gray-600">
                   The STEM Center Assistant is a chatbot designed to provide quick and accurate information about the
                   services, resources, and events at the STEM Center. Our goal is to improve the student experience by
-                  facilitating access to information and reducing the workload of the center's staff.
+                  facilitating access to information and reducing the workload of the center&apos;s staff.
                 </p>
               </CardContent>
             </Card>
