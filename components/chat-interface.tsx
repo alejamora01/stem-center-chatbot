@@ -7,7 +7,6 @@ import { Send, Bot, User, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
-import { stemCenterInfo } from "@/lib/stem-center-data"
 
 // Types for messages
 type Message = {
@@ -22,68 +21,7 @@ const suggestedQuestions = [
   "What tutoring services are available?",
   "Who can help me with Calculus?",
   "What events are coming up?",
-  
 ]
-
-// Simple function to generate responses based on keywords
-function generateResponse(message: string): string {
-  const lowerMessage = message.toLowerCase()
-
-  if (lowerMessage.includes("hello") || lowerMessage.includes("hi") || lowerMessage.includes("good morning")) {
-    return "Hello! I'm the virtual assistant for the STEM Center. How can I help you today?"
-  }
-
-  if (lowerMessage.includes("location") || lowerMessage.includes("where") || lowerMessage.includes("address")) {
-    return `The STEM Center is located at: ${stemCenterInfo.location}`
-  }
-
-  if (lowerMessage.includes("hours") || lowerMessage.includes("time") || lowerMessage.includes("open")) {
-    return `Our hours of operation are: ${stemCenterInfo.hours}`
-  }
-
-  if (lowerMessage.includes("service") || lowerMessage.includes("offer")) {
-    return `The STEM Center offers the following services:
-${stemCenterInfo.services.map((s) => `• ${s}`).join("\n")}`
-  }
-
-  if (lowerMessage.includes("tutor") || lowerMessage.includes("help") || lowerMessage.includes("assistance")) {
-    const tutorInfo = stemCenterInfo.tutors
-      .map((t) => `• ${t.name}: ${t.subjects.join(", ")} - ${t.schedule}`)
-      .join("\n")
-    return `We have the following tutors:
-${tutorInfo}`
-  }
-
-  if (lowerMessage.includes("event") || lowerMessage.includes("workshop") || lowerMessage.includes("activity")) {
-    const eventInfo = stemCenterInfo.events.map((e) => `• ${e.name}: ${e.date} at ${e.time}`).join("\n")
-    return `Upcoming events at the STEM Center:
-${eventInfo}`
-  }
-
-  if (lowerMessage.includes("3d printing") || lowerMessage.includes("print") || lowerMessage.includes("3d")) {
-    return "We offer 3D printing services for academic projects. To use this service, please send your model in STL format to stem.center@gannon.edu and you will receive a confirmation with the estimated time and cost of printing."
-  }
-
-  if (lowerMessage.includes("thank")) {
-    return "You're welcome! I'm here to help. If you have more questions, feel free to ask."
-  }
-
-  if (lowerMessage.includes("calculus")) {
-    const calculusTutors = stemCenterInfo.tutors
-      .filter((tutor) => tutor.subjects.some((subject) => subject.toLowerCase().includes("calculus")))
-      .map((tutor) => `• ${tutor.name}: ${tutor.schedule}`)
-      .join("\n")
-
-    if (calculusTutors) {
-      return `These tutors can help you with Calculus:
-${calculusTutors}
-
-To schedule an appointment, please visit our online scheduling system.`
-    }
-  }
-
-  return "I don't have specific information about that. Can you rephrase your question? I can help you with information about location, hours, services, tutoring, and events at the STEM Center."
-}
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
@@ -112,20 +50,7 @@ export default function ChatInterface() {
     setInput("")
     setIsLoading(true)
 
-    // Simulate response time
-    setTimeout(() => {
-      // Generate simple response based on keywords
-      const responseContent = generateResponse(input)
-      const assistantMessage: Message = { role: "assistant", content: responseContent }
-
-      setMessages((prev) => [...prev, assistantMessage])
-      setIsLoading(false)
-    }, 1000)
-
-    // AI Integration (commented out for future implementation)
-    /*
     try {
-      // Call the API
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -133,7 +58,7 @@ export default function ChatInterface() {
       })
 
       const data = await response.json()
-      
+
       if (response.ok) {
         const assistantMessage: Message = { role: "assistant", content: data.response }
         setMessages((prev) => [...prev, assistantMessage])
@@ -142,15 +67,14 @@ export default function ChatInterface() {
       }
     } catch (error) {
       console.error("Error:", error)
-      const errorMessage: Message = { 
-        role: "assistant", 
-        content: "I'm sorry, there was an error processing your request. Please try again later." 
+      const errorMessage: Message = {
+        role: "assistant",
+        content: "I'm sorry, there was an error processing your request. Please try again later."
       }
       setMessages((prev) => [...prev, errorMessage])
     } finally {
       setIsLoading(false)
     }
-    */
   }
 
   return (
@@ -225,4 +149,4 @@ export default function ChatInterface() {
       </form>
     </Card>
   )
-} 
+}

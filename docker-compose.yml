@@ -1,0 +1,18 @@
+services:
+  chatbot:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
+      - OLLAMA_MODEL=llama3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://chatbot:3000
+    depends_on:
+      - chatbot
+    restart: unless-stopped

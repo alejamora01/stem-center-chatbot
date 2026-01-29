@@ -1,8 +1,11 @@
 import OpenAI from "openai"
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OLLAMA_BASE_URL || "http://localhost:11434/v1",
+  apiKey: "ollama", // Ollama doesn't need a real key but the SDK requires one
 })
+
+const model = process.env.OLLAMA_MODEL || "llama3"
 
 export async function generateText({
   system,
@@ -12,7 +15,7 @@ export async function generateText({
   prompt: string
 }) {
   const chatCompletion = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
+    model,
     messages: [
       { role: "system", content: system },
       { role: "user", content: prompt },
